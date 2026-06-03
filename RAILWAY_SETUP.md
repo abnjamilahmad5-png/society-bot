@@ -48,16 +48,6 @@ git push -u origin main
 2. اختر المستودع **society-bot**
 3. اضغط **Deploy**
 
-### **الخطوة 4️⃣ : إضافة متغيرات البيئة**
-
-بعد النشر، اذهب إلى **Variables**:
-
-```
-TOKEN = MTUxMTYzMTE4MjMxNDYwMjU3Nw.GkE1yO.kkEG-dmI-nYo1MgA23pCzfuOoR7GvcNFUFh4cQ
-PREFIX = !
-GUILD_ID = YOUR_GUILD_ID
-ADMIN_ROLE = YOUR_ADMIN_ROLE_ID
-```
 
 ### **الخطوة 5️⃣ : تعديل main.py لقراءة متغيرات البيئة**
 
