@@ -34,10 +34,15 @@ class ColorManager:
     INFO = 0x0099FF
 
 class EmbedManager:
+<<<<<<< Updated upstream
+=======
+    """مدير الـ Embeds - يحتوي على جميع أنواع الإمبيدات المستخدمة في الكوجز"""
+
+>>>>>>> Stashed changes
     @staticmethod
     def get_timestamp():
         return datetime.now().strftime("%d/%m/%Y • %H:%M:%S")
-    
+
     @staticmethod
     def create_embed(title="", description="", color=ColorManager.PRIMARY, **kwargs):
         embed = discord.Embed(
@@ -50,6 +55,68 @@ class EmbedManager:
         for field_title, field_value in kwargs.items():
             embed.add_field(name=field_title, value=field_value, inline=False)
         return embed
+<<<<<<< Updated upstream
+=======
+
+    # ─── الأنواع المختصرة التي تستخدمها الكوجز ───────────────────────────
+
+    @staticmethod
+    def info(title="", description="", **kwargs):
+        """Embed معلومات - لون أزرق"""
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=ColorManager.INFO,
+            timestamp=datetime.now()
+        )
+        embed.set_footer(text=f"𝑆𝑜𝑐𝑖𝑒𝑡𝑦 ✦ {EmbedManager.get_timestamp()}")
+        for k, v in kwargs.items():
+            embed.add_field(name=k, value=v, inline=False)
+        return embed
+
+    @staticmethod
+    def success(title="", description="", **kwargs):
+        """Embed نجاح - لون أخضر"""
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=ColorManager.SUCCESS,
+            timestamp=datetime.now()
+        )
+        embed.set_footer(text=f"𝑆𝑜𝑐𝑖𝑒𝑡𝑦 ✦ {EmbedManager.get_timestamp()}")
+        for k, v in kwargs.items():
+            embed.add_field(name=k, value=v, inline=False)
+        return embed
+
+    @staticmethod
+    def error(title="", description="", **kwargs):
+        """Embed خطأ - لون أحمر"""
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=ColorManager.ERROR,
+            timestamp=datetime.now()
+        )
+        embed.set_footer(text=f"𝑆𝑜𝑐𝑖𝑒𝑡𝑦 ✦ {EmbedManager.get_timestamp()}")
+        for k, v in kwargs.items():
+            embed.add_field(name=k, value=v, inline=False)
+        return embed
+
+    @staticmethod
+    def warning(title="", description="", **kwargs):
+        """Embed تحذير - لون برتقالي"""
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=ColorManager.WARNING,
+            timestamp=datetime.now()
+        )
+        embed.set_footer(text=f"𝑆𝑜𝑐𝑖𝑒𝑡𝑦 ✦ {EmbedManager.get_timestamp()}")
+        for k, v in kwargs.items():
+            embed.add_field(name=k, value=v, inline=False)
+        return embed
+
+>>>>>>> Stashed changes
 
 class Society(commands.Bot):
     def __init__(self):
@@ -68,25 +135,37 @@ class Society(commands.Bot):
         self.embed_manager = EmbedManager()
         self.color_manager = ColorManager()
         self.start_time = None
-    
+
     def load_config(self):
         """الأولوية: متغيرات البيئة → ثم config.json"""
         config = {}
+<<<<<<< Updated upstream
         
         # 1. اقرأ من config.json (الإعدادات العامة فقط)
+=======
+
+        # 1. اقرأ من config.json
+>>>>>>> Stashed changes
         try:
             if os.path.exists("config.json"):
                 with open("config.json", "r", encoding="utf-8") as f:
                     config.update(json.load(f))
         except Exception as e:
+<<<<<<< Updated upstream
             print(f"⚠️ تحذير: {e}")
         
         # 2. متغيرات البيئة تتجاوز كل شيء (الأولوية القصوى)
+=======
+            print(f"⚠️ تحذير قراءة config.json: {e}")
+
+        # 2. متغيرات البيئة تتجاوز كل شيء (Railway)
+>>>>>>> Stashed changes
         env_token = os.environ.get("TOKEN") or os.environ.get("BOT_TOKEN")
         if env_token:
             config['TOKEN'] = env_token
             print("✅ تم تحميل التوكن من متغيرات البيئة")
         else:
+<<<<<<< Updated upstream
             print("⚠️ لم يتم العثور على TOKEN في البيئة")
         
         # باقي المتغيرات
@@ -94,10 +173,19 @@ class Society(commands.Bot):
         
         return config
     
+=======
+            print("⚠️ لم يتم العثور على TOKEN في البيئة - سيُستخدم من config.json")
+
+        config['PREFIX'] = os.environ.get('PREFIX', config.get('PREFIX', '!'))
+
+        return config
+
+>>>>>>> Stashed changes
     async def load_cogs(self):
         cogs_folder = "cogs"
         if not os.path.exists(cogs_folder):
             os.makedirs(cogs_folder)
+<<<<<<< Updated upstream
         
         for filename in os.listdir(cogs_folder):
             if filename.endswith(".py") and filename != "__init__.py":
@@ -107,9 +195,25 @@ class Society(commands.Bot):
                 except Exception as e:
                     print(f"❌ خطأ في {filename}: {e}")
     
+=======
+
+        loaded = 0
+        failed = 0
+        for filename in sorted(os.listdir(cogs_folder)):
+            if filename.endswith(".py") and filename != "__init__.py":
+                try:
+                    await self.load_extension(f"cogs.{filename[:-3]}")
+                    print(f"  ✅ {filename}")
+                    loaded += 1
+                except Exception as e:
+                    print(f"  ❌ {filename}: {e}")
+                    failed += 1
+        print(f"\n📦 الكوجز: {loaded} محملة، {failed} فشلت\n")
+
+>>>>>>> Stashed changes
     async def setup_hook(self):
         await self.load_cogs()
-    
+
     async def on_ready(self):
         self.start_time = datetime.now()
         print(f"\n{'='*50}")
@@ -118,9 +222,10 @@ class Society(commands.Bot):
         print(f"✅ ID: {self.user.id}")
         print(f"✅ السيرفرات: {len(self.guilds)}")
         print(f"{'='*50}\n")
-        
+
         try:
             synced = await self.tree.sync()
+<<<<<<< Updated upstream
             print(f"✅ تم مزامنة {len(synced)} أمر Slash")
         except Exception as e:
             print(f"⚠️ مزامنة الأوامر: {e}")
@@ -146,6 +251,32 @@ async def main():
     
     print(f"🔑 التوكن: {token[:20]}... ({len(token)} حرف)")
     
+=======
+            print(f"✅ تم مزامنة {len(synced)} أمر Slash (Global)")
+        except Exception as e:
+            print(f"⚠️ مزامنة الأوامر: {e}")
+
+
+async def main():
+    bot = Society()
+
+    token = bot.config.get("TOKEN")
+
+    # التحقق من التوكن
+    if not token or token in ["أضف توكن البوت هنا", "YOUR_BOT_TOKEN", ""]:
+        print("❌ خطأ: التوكن غير موجود أو غير صحيح!")
+        print("🔧 الحلول:")
+        print("   • في Railway: Variables → New Variable → KEY: TOKEN → VALUE: توكنك")
+        print("   • محلياً: export TOKEN='توكنك'")
+        sys.exit(1)
+
+    if len(token) < 50:
+        print(f"❌ التوكن قصير جداً ({len(token)} حرف)! يجب ~70 حرف")
+        sys.exit(1)
+
+    print(f"🔑 التوكن: {token[:20]}... ({len(token)} حرف)")
+
+>>>>>>> Stashed changes
     try:
         await bot.start(token)
     except discord.LoginFailure as e:
@@ -153,8 +284,14 @@ async def main():
         print("🔧 التوكن غلط! جيب توكن جديد من Discord Developer Portal")
         sys.exit(1)
     except Exception as e:
+<<<<<<< Updated upstream
         print(f"❌ خطأ: {e}")
         sys.exit(1)
+=======
+        print(f"❌ خطأ غير متوقع: {e}")
+        sys.exit(1)
+
+>>>>>>> Stashed changes
 
 if __name__ == "__main__":
     asyncio.run(main())
