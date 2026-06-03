@@ -1,0 +1,52 @@
+{
+  "TOKEN": "MTUxMTYzMTE4MjMxNDYwMjU3Nw.GkE1yO.kkEG-dmI-nYo1MgA23pCzfuOoR7GvcNFUFh4cQ",
+  "PREFIX": "!",
+  "DEFAULT_COLOR": 3605375,
+  "GUILD_ID": 0,
+  "ADMIN_ROLE": 0,
+  "MOD_ROLE": 0,
+  "MUTE_ROLE": 0,
+  "WELCOME_CHANNEL": 0,
+  "GOODBYE_CHANNEL": 0,
+  "LOG_CHANNEL": 0,
+  "MOD_LOG_CHANNEL": 0,
+  "TICKET_LOG_CHANNEL": 0,
+  "PROTECTION_LOG_CHANNEL": 0,
+  "TICKET_CATEGORY": 0,
+  "TICKET_PANEL_CHANNEL": 0,
+  "SUPPORT_ROLE": 0,
+  "ENABLED_SYSTEMS": {
+    "tickets": true,
+    "moderation": true,
+    "protection": true,
+    "logging": true,
+    "welcome": true,
+    "levels": true,
+    "economy": true,
+    "giveaway": true,
+    "suggestions": true
+  },
+  "ECONOMY": {
+    "currency_name": "💎",
+    "daily_reward": 100,
+    "weekly_reward": 500,
+    "work_min": 50,
+    "work_max": 150
+  },
+  "PROTECTION": {
+    "anti_raid": true,
+    "anti_spam": true,
+    "anti_links": true,
+    "anti_invite": true,
+    "anti_mass_mention": true,
+    "raid_threshold": 10,
+    "spam_threshold": 5,
+    "mention_limit": 5
+  },
+  "LEVELS": {
+    "enabled": true,
+    "level_channel": 0,
+    "base_xp": 100,
+    "xp_multiplier": 1.0
+  }
+}
