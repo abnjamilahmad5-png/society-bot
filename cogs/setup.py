@@ -144,40 +144,6 @@ class Setup(commands.Cog):
             embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
             await interaction.response.send_message(embed=embed, ephemeral=True)
     
-    @app_commands.command(name="set-welcome", description="تعيين قناة الترحيب")
-    @app_commands.checks.has_permissions(administrator=True)
-    async def set_welcome_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
-        try:
-            settings = self.get_guild_settings(interaction.guild.id)
-            settings[str(interaction.guild.id)]["welcome_channel"] = channel.id
-            self.data_manager.save_data("guild_settings.json", settings)
-            
-            embed = self.embed_manager.success(
-                "✅ تم التعيين",
-                f"تم تعيين قناة الترحيب: {channel.mention}"
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-        except Exception as e:
-            embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-    
-    @app_commands.command(name="set-goodbye", description="تعيين قناة الوداع")
-    @app_commands.checks.has_permissions(administrator=True)
-    async def set_goodbye_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
-        try:
-            settings = self.get_guild_settings(interaction.guild.id)
-            settings[str(interaction.guild.id)]["goodbye_channel"] = channel.id
-            self.data_manager.save_data("guild_settings.json", settings)
-            
-            embed = self.embed_manager.success(
-                "✅ تم التعيين",
-                f"تم تعيين قناة الوداع: {channel.mention}"
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-        except Exception as e:
-            embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-    
     @commands.command(name="setup", aliases=["s"])
     @commands.has_permissions(administrator=True)
     async def setup_prefix(self, ctx):
@@ -243,189 +209,13 @@ class SetupMainView(discord.ui.View):
 
 
 # ───────────────────────────────────────────────
-# مساعد: بناء قائمة رتب
+# واجهات التكتات والترحيب والحماية واللوق والإشراف
 # ───────────────────────────────────────────────
-def build_role_select(placeholder, custom_id):
-    class RoleSelect(discord.ui.Select):
-        def __init__(self, cog):
-            self.cog = cog
-            options = []
-            # نبني الـ options لاحقاً لكل interaction
-            super().__init__(
-                placeholder=placeholder,
-                min_values=1,
-                max_values=1,
-                options=[discord.SelectOption(label="جاري التحميل...", value="0")]
-            )
-            self.custom_id = custom_id
-        
-        async def callback(self, interaction: discord.Interaction):
-            pass  # نعيد تعريفه في الـ View
-    return RoleSelect
 
-
-class ModSetupView(discord.ui.View):
-    def __init__(self, cog):
-        super().__init__(timeout=300)
-        self.cog = cog
-        
-        # رتبة الأدمن
-        self.admin_select = discord.ui.Select(
-            placeholder="🛡️ اختر رتبة الأدمن",
-            min_values=1, max_values=1,
-            options=[discord.SelectOption(label="اضغط هنا لعرض الرتب", value="0")]
-        )
-        self.admin_select.callback = self.admin_callback
-        self.add_item(self.admin_select)
-        
-        # رتبة المود
-        self.mod_select = discord.ui.Select(
-            placeholder="👮 اختر رتبة المود",
-            min_values=1, max_values=1,
-            options=[discord.SelectOption(label="اضغط هنا لعرض الرتب", value="0")]
-        )
-        self.mod_select.callback = self.mod_callback
-        self.add_item(self.mod_select)
-        
-        # رتبة الميوت
-        self.mute_select = discord.ui.Select(
-            placeholder="🔇 اختر رتبة الميوت",
-            min_values=1, max_values=1,
-            options=[discord.SelectOption(label="اضغط هنا لعرض الرتب", value="0")]
-        )
-        self.mute_select.callback = self.mute_callback
-        self.add_item(self.mute_select)
-    
-    async def refresh_options(self, interaction: discord.Interaction):
-        """تحديث الـ options بقائمة الرتب الفعلية"""
-        roles = [r for r in interaction.guild.roles if not r.is_default() and not r.managed]
-        roles = sorted(roles, key=lambda r: r.position, reverse=True)[:24]
-        
-        options = [discord.SelectOption(label=r.name, value=str(r.id), description=f"اللون: {str(r.color)}") for r in roles]
-        if not options:
-            options = [discord.SelectOption(label="لا يوجد رتب", value="0")]
-        
-        self.admin_select.options = options.copy()
-        self.mod_select.options = options.copy()
-        self.mute_select.options = options.copy()
-    
-    async def admin_callback(self, interaction: discord.Interaction):
-        if self.admin_select.values[0] == "0":
-            await self.refresh_options(interaction)
-            await interaction.response.edit_message(view=self)
-            return
-        role_id = int(self.admin_select.values[0])
-        role = interaction.guild.get_role(role_id)
-        settings = self.cog.get_guild_settings(interaction.guild.id)
-        settings[str(interaction.guild.id)]["admin_role"] = role_id
-        self.cog.data_manager.save_data("guild_settings.json", settings)
-        await interaction.response.send_message(
-            embed=self.cog.embed_manager.success("✅ تم", f"رتبة الأدمن: {role.mention}"),
-            ephemeral=True
-        )
-    
-    async def mod_callback(self, interaction: discord.Interaction):
-        if self.mod_select.values[0] == "0":
-            await self.refresh_options(interaction)
-            await interaction.response.edit_message(view=self)
-            return
-        role_id = int(self.mod_select.values[0])
-        role = interaction.guild.get_role(role_id)
-        settings = self.cog.get_guild_settings(interaction.guild.id)
-        settings[str(interaction.guild.id)]["mod_role"] = role_id
-        self.cog.data_manager.save_data("guild_settings.json", settings)
-        await interaction.response.send_message(
-            embed=self.cog.embed_manager.success("✅ تم", f"رتبة المود: {role.mention}"),
-            ephemeral=True
-        )
-    
-    async def mute_callback(self, interaction: discord.Interaction):
-        if self.mute_select.values[0] == "0":
-            await self.refresh_options(interaction)
-            await interaction.response.edit_message(view=self)
-            return
-        role_id = int(self.mute_select.values[0])
-        role = interaction.guild.get_role(role_id)
-        settings = self.cog.get_guild_settings(interaction.guild.id)
-        settings[str(interaction.guild.id)]["mute_role"] = role_id
-        self.cog.data_manager.save_data("guild_settings.json", settings)
-        await interaction.response.send_message(
-            embed=self.cog.embed_manager.success("✅ تم", f"رتبة الميوت: {role.mention}"),
-            ephemeral=True
-        )
-
-    @discord.ui.button(label="🔙 رجوع", style=discord.ButtonStyle.secondary)
-    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = self.cog.embed_manager.info("⚙️ إعدادات السيرفر", "اختر الفئة التي تريد تعديلها")
-        await interaction.response.send_message(embed=embed, view=SetupMainView(self.cog), ephemeral=True)
-
-
-# ───────────────────────────────────────────────
-# واجهة التكتات
-# ───────────────────────────────────────────────
 class TicketSetupView(discord.ui.View):
     def __init__(self, cog):
         super().__init__(timeout=300)
         self.cog = cog
-        
-        self.panel_select = discord.ui.Select(
-            placeholder="📋 اختر قناة لوحة التكتات",
-            min_values=1, max_values=1,
-            options=[discord.SelectOption(label="اضغط هنا لعرض القنوات", value="0")]
-        )
-        self.panel_select.callback = self.panel_callback
-        self.add_item(self.panel_select)
-        
-        self.cat_select = discord.ui.Select(
-            placeholder="📁 اختر فئة التكتات",
-            min_values=1, max_values=1,
-            options=[discord.SelectOption(label="اضغط هنا لعرض الفئات", value="0")]
-        )
-        self.cat_select.callback = self.cat_callback
-        self.add_item(self.cat_select)
-    
-    async def refresh_options(self, interaction: discord.Interaction):
-        text_chs = [c for c in interaction.guild.text_channels][:24]
-        cats = [c for c in interaction.guild.categories][:24]
-        
-        panel_opts = [discord.SelectOption(label=f"#{c.name}", value=str(c.id)) for c in text_chs]
-        cat_opts = [discord.SelectOption(label=f"📁 {c.name}", value=str(c.id)) for c in cats]
-        
-        if not panel_opts: panel_opts = [discord.SelectOption(label="لا يوجد قنوات", value="0")]
-        if not cat_opts: cat_opts = [discord.SelectOption(label="لا يوجد فئات", value="0")]
-        
-        self.panel_select.options = panel_opts
-        self.cat_select.options = cat_opts
-    
-    async def panel_callback(self, interaction: discord.Interaction):
-        if self.panel_select.values[0] == "0":
-            await self.refresh_options(interaction)
-            await interaction.response.edit_message(view=self)
-            return
-        ch_id = int(self.panel_select.values[0])
-        ch = interaction.guild.get_channel(ch_id)
-        settings = self.cog.get_guild_settings(interaction.guild.id)
-        settings[str(interaction.guild.id)]["ticket_panel_channel"] = ch_id
-        self.cog.data_manager.save_data("guild_settings.json", settings)
-        await interaction.response.send_message(
-            embed=self.cog.embed_manager.success("✅ تم", f"قناة اللوحة: {ch.mention}"),
-            ephemeral=True
-        )
-    
-    async def cat_callback(self, interaction: discord.Interaction):
-        if self.cat_select.values[0] == "0":
-            await self.refresh_options(interaction)
-            await interaction.response.edit_message(view=self)
-            return
-        ch_id = int(self.cat_select.values[0])
-        ch = interaction.guild.get_channel(ch_id)
-        settings = self.cog.get_guild_settings(interaction.guild.id)
-        settings[str(interaction.guild.id)]["ticket_category"] = ch_id
-        self.cog.data_manager.save_data("guild_settings.json", settings)
-        await interaction.response.send_message(
-            embed=self.cog.embed_manager.success("✅ تم", f"الفئة: {ch.mention}"),
-            ephemeral=True
-        )
 
     @discord.ui.button(label="🔙 رجوع", style=discord.ButtonStyle.secondary)
     async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -433,66 +223,10 @@ class TicketSetupView(discord.ui.View):
         await interaction.response.send_message(embed=embed, view=SetupMainView(self.cog), ephemeral=True)
 
 
-# ───────────────────────────────────────────────
-# واجهة الترحيب
-# ───────────────────────────────────────────────
 class WelcomeSetupView(discord.ui.View):
     def __init__(self, cog):
         super().__init__(timeout=300)
         self.cog = cog
-        
-        self.welcome_select = discord.ui.Select(
-            placeholder="🎉 اختر قناة الترحيب",
-            min_values=1, max_values=1,
-            options=[discord.SelectOption(label="اضغط هنا لعرض القنوات", value="0")]
-        )
-        self.welcome_select.callback = self.welcome_callback
-        self.add_item(self.welcome_select)
-        
-        self.goodbye_select = discord.ui.Select(
-            placeholder="👋 اختر قناة الوداع",
-            min_values=1, max_values=1,
-            options=[discord.SelectOption(label="اضغط هنا لعرض القنوات", value="0")]
-        )
-        self.goodbye_select.callback = self.goodbye_callback
-        self.add_item(self.goodbye_select)
-    
-    async def refresh_options(self, interaction: discord.Interaction):
-        text_chs = [c for c in interaction.guild.text_channels][:24]
-        opts = [discord.SelectOption(label=f"#{c.name}", value=str(c.id)) for c in text_chs]
-        if not opts: opts = [discord.SelectOption(label="لا يوجد قنوات", value="0")]
-        self.welcome_select.options = opts
-        self.goodbye_select.options = opts.copy()
-    
-    async def welcome_callback(self, interaction: discord.Interaction):
-        if self.welcome_select.values[0] == "0":
-            await self.refresh_options(interaction)
-            await interaction.response.edit_message(view=self)
-            return
-        ch_id = int(self.welcome_select.values[0])
-        ch = interaction.guild.get_channel(ch_id)
-        settings = self.cog.get_guild_settings(interaction.guild.id)
-        settings[str(interaction.guild.id)]["welcome_channel"] = ch_id
-        self.cog.data_manager.save_data("guild_settings.json", settings)
-        await interaction.response.send_message(
-            embed=self.cog.embed_manager.success("✅ تم", f"قناة الترحيب: {ch.mention}"),
-            ephemeral=True
-        )
-    
-    async def goodbye_callback(self, interaction: discord.Interaction):
-        if self.goodbye_select.values[0] == "0":
-            await self.refresh_options(interaction)
-            await interaction.response.edit_message(view=self)
-            return
-        ch_id = int(self.goodbye_select.values[0])
-        ch = interaction.guild.get_channel(ch_id)
-        settings = self.cog.get_guild_settings(interaction.guild.id)
-        settings[str(interaction.guild.id)]["goodbye_channel"] = ch_id
-        self.cog.data_manager.save_data("guild_settings.json", settings)
-        await interaction.response.send_message(
-            embed=self.cog.embed_manager.success("✅ تم", f"قناة الوداع: {ch.mention}"),
-            ephemeral=True
-        )
 
     @discord.ui.button(label="🔙 رجوع", style=discord.ButtonStyle.secondary)
     async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -500,9 +234,6 @@ class WelcomeSetupView(discord.ui.View):
         await interaction.response.send_message(embed=embed, view=SetupMainView(self.cog), ephemeral=True)
 
 
-# ───────────────────────────────────────────────
-# واجهة الحماية
-# ───────────────────────────────────────────────
 class ProtectionSetupView(discord.ui.View):
     def __init__(self, cog):
         super().__init__(timeout=300)
@@ -532,42 +263,21 @@ class ProtectionSetupView(discord.ui.View):
         await interaction.response.send_message(embed=embed, view=SetupMainView(self.cog), ephemeral=True)
 
 
-# ───────────────────────────────────────────────
-# واجهة اللوق
-# ───────────────────────────────────────────────
 class LoggingSetupView(discord.ui.View):
     def __init__(self, cog):
         super().__init__(timeout=300)
         self.cog = cog
-        
-        self.log_select = discord.ui.Select(
-            placeholder="📋 اختر قناة اللوق العام",
-            min_values=1, max_values=1,
-            options=[discord.SelectOption(label="اضغط هنا لعرض القنوات", value="0")]
-        )
-        self.log_select.callback = self.log_callback
-        self.add_item(self.log_select)
-    
-    async def refresh_options(self, interaction: discord.Interaction):
-        text_chs = [c for c in interaction.guild.text_channels][:24]
-        opts = [discord.SelectOption(label=f"#{c.name}", value=str(c.id)) for c in text_chs]
-        if not opts: opts = [discord.SelectOption(label="لا يوجد قنوات", value="0")]
-        self.log_select.options = opts
-    
-    async def log_callback(self, interaction: discord.Interaction):
-        if self.log_select.values[0] == "0":
-            await self.refresh_options(interaction)
-            await interaction.response.edit_message(view=self)
-            return
-        ch_id = int(self.log_select.values[0])
-        ch = interaction.guild.get_channel(ch_id)
-        settings = self.cog.get_guild_settings(interaction.guild.id)
-        settings[str(interaction.guild.id)]["log_channel"] = ch_id
-        self.cog.data_manager.save_data("guild_settings.json", settings)
-        await interaction.response.send_message(
-            embed=self.cog.embed_manager.success("✅ تم", f"قناة اللوق: {ch.mention}"),
-            ephemeral=True
-        )
+
+    @discord.ui.button(label="🔙 رجوع", style=discord.ButtonStyle.secondary)
+    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = self.cog.embed_manager.info("⚙️ إعدادات السيرفر", "اختر الفئة التي تريد تعديلها")
+        await interaction.response.send_message(embed=embed, view=SetupMainView(self.cog), ephemeral=True)
+
+
+class ModSetupView(discord.ui.View):
+    def __init__(self, cog):
+        super().__init__(timeout=300)
+        self.cog = cog
 
     @discord.ui.button(label="🔙 رجوع", style=discord.ButtonStyle.secondary)
     async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
