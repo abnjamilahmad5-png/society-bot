@@ -13,7 +13,7 @@ class Echo(commands.Cog):
     @app_commands.command(name="text", description="البوت يردد الرسالة")
     @app_commands.describe(message="الرسالة اللي تبي تردد")
     async def text(self, interaction: discord.Interaction, message: str):
-        """البوت يردد الرسالة بنفس الصيغة"""
+        """البوت يردد الرسالة بنفس الصيغة بدون mentions"""
         try:
             class EchoView(discord.ui.View):
                 def __init__(view_self):
@@ -23,7 +23,12 @@ class Echo(commands.Cog):
                 async def confirmed(view_self, inter: discord.Interaction, btn):
                     await inter.response.defer()
             
-            await interaction.response.send_message(message, view=EchoView())
+            # إرسال الرسالة بدون السماح بأي mentions
+            await interaction.response.send_message(
+                message, 
+                view=EchoView(),
+                allowed_mentions=discord.AllowedMentions(parse=[])
+            )
         except Exception as e:
             embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
             await interaction.response.send_message(embed=embed, ephemeral=True)
