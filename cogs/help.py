@@ -25,6 +25,7 @@ class HelpView(discord.ui.View):
             discord.SelectOption(label="🎭 الرتب", value="roles"),
             discord.SelectOption(label="ℹ️ المعلومات", value="info"),
             discord.SelectOption(label="🎮 الترفيه", value="fun"),
+            discord.SelectOption(label="📝 النصوص", value="echo"),
             discord.SelectOption(label="⚙️ الإعداد", value="setup"),
         ]
     )
@@ -45,6 +46,7 @@ class HelpView(discord.ui.View):
             "roles": self._get_roles_help(),
             "info": self._get_info_help(),
             "fun": self._get_fun_help(),
+            "echo": self._get_echo_help(),
             "setup": self._get_setup_help(),
         }
         
@@ -210,6 +212,17 @@ class HelpView(discord.ui.View):
             "تم حذف أوامر الترفيه لتركيز أفضل على أنظمة السيرفر",
             **{
                 "الهدايا والجوائز": "موجودة في نظام Giveaway",
+            }
+        )
+    
+    def _get_echo_help(self):
+        """أوامر النصوص والتكرار"""
+        return self.embed_manager.info(
+            "📝 نظام النصوص والتكرار",
+            "البوت يردد كلامك بأساليب متعددة",
+            **{
+                "/text [message] [@user] [style]": "البوت يردد الرسالة",
+                "الأساليب المتاحة": "عادي 📝 • أحرف كبيرة 🔤 • أحرف صغيرة 🔡 • عكسي 🔄 • فراغات 🔲",
             }
         )
     
