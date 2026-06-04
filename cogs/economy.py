@@ -1,236 +1,208 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from main import EmbedManager, DataManager
-from datetime import datetime, timedelta
-import random
+from main import EmbedManager, DataManager, ColorManager
+from typing import Optional
 
 class Economy(commands.Cog):
-    """نظام الاقتصاد والعملات"""
+    """نظام كريديت Discord العالمي"""
     
     def __init__(self, bot):
         self.bot = bot
         self.embed_manager = EmbedManager()
         self.data_manager = DataManager()
     
-    def get_economy(self):
-        """الحصول على بيانات الاقتصاد"""
-        return self.data_manager.load_data("economy.json")
+    def get_credits_data(self):
+        """الحصول على بيانات الكريديت"""
+        return self.data_manager.load_data("credits.json")
     
-    def save_economy(self, data):
-        """حفظ بيانات الاقتصاد"""
-        self.data_manager.save_data("economy.json", data)
+    def save_credits_data(self, data):
+        """حفظ بيانات الكريديت"""
+        self.data_manager.save_data("credits.json", data)
     
-    def get_user_balance(self, user_id):
-        """الحصول على رصيد المستخدم"""
-        economy = self.get_economy()
-        user_id = str(user_id)
-        
-        if user_id not in economy:
-            economy[user_id] = {"wallet": 1000, "bank": 0, "last_daily": None}
-            self.save_economy(economy)
-        
-        return economy[user_id]
+    def get_user_credits(self, user_id: int) -> int:
+        """الحصول على كريديت المستخدم"""
+        data = self.get_credits_data()
+        return data.get(str(user_id), 0)
     
-    @app_commands.command(name="balance", description="عرض الرصيد")
-    async def balance(self, interaction: discord.Interaction, user: discord.Member = None):
-        """عرض الرصيد"""
+    def set_user_credits(self, user_id: int, amount: int):
+        """تعيين كريديت المستخدم"""
+        data = self.get_credits_data()
+        data[str(user_id)] = max(0, amount)  # لا يقل عن 0
+        self.save_credits_data(data)
+    
+    def add_user_credits(self, user_id: int, amount: int) -> int:
+        """إضافة كريديت للمستخدم"""
+        current = self.get_user_credits(user_id)
+        new_amount = max(0, current + amount)
+        self.set_user_credits(user_id, new_amount)
+        return new_amount
+    
+    @app_commands.command(name="balance", description="عرض رصيدك من الكريديت")
+    async def balance(self, interaction: discord.Interaction, user: Optional[discord.Member] = None):
+        """عرض رصيد الكريديت"""
         try:
-            if user is None:
-                user = interaction.user
-            
-            balance_data = self.get_user_balance(user.id)
+            target_user = user or interaction.user
+            credits = self.get_user_credits(target_user.id)
             
             embed = self.embed_manager.info(
-                f"💰 رصيد {user.name}",
-                f"**المحفظة**: 💎 {balance_data['wallet']}\n"
-                f"**البنك**: 🏦 {balance_data['bank']}\n"
-                f"**المجموع**: 💎 {balance_data['wallet'] + balance_data['bank']}"
+                f"💎 كريديت {target_user.name}",
+                f"**الرصيد**: `{credits:,}` 💳"
             )
-            embed.set_thumbnail(url=user.avatar.url if user.avatar else "")
+            embed.set_thumbnail(url=target_user.avatar.url if target_user.avatar else "")
+            embed.add_field(
+                name="ℹ️ معلومة",
+                value="الكريديت هو النقود العالمية - استخدمها في الهدايا والفعاليات!",
+                inline=False
+            )
             
-            await interaction.response.send_message(embed=embed, ephemeral=False)
+            await interaction.response.send_message(embed=embed)
         except Exception as e:
             embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
             await interaction.response.send_message(embed=embed, ephemeral=True)
     
-    @app_commands.command(name="daily", description="مكافأة يومية")
-    async def daily_reward(self, interaction: discord.Interaction):
-        """مكافأة يومية"""
-        try:
-            balance_data = self.get_user_balance(interaction.user.id)
-            
-            if balance_data["last_daily"]:
-                last_daily = datetime.fromisoformat(balance_data["last_daily"])
-                if (datetime.now() - last_daily) < timedelta(hours=24):
-                    hours_left = 24 - int((datetime.now() - last_daily).total_seconds() / 3600)
-                    embed = self.embed_manager.warning(
-                        "⏳ انتظر",
-                        f"يمكنك الحصول على مكافأة يومية جديدة بعد **{hours_left}** ساعة"
-                    )
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
-                    return
-            
-            reward = 100
-            economy = self.get_economy()
-            economy[str(interaction.user.id)]["wallet"] += reward
-            economy[str(interaction.user.id)]["last_daily"] = datetime.now().isoformat()
-            self.save_economy(economy)
-            
-            embed = self.embed_manager.success(
-                "✅ تم استلام المكافأة",
-                f"حصلت على **💎 {reward}**"
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=False)
-        except Exception as e:
-            embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-    
-    @app_commands.command(name="work", description="العمل للحصول على عملات")
-    async def work(self, interaction: discord.Interaction):
-        """العمل"""
-        try:
-            jobs = [
-                {"name": "برمجة", "reward": (50, 100)},
-                {"name": "تصميم", "reward": (40, 80)},
-                {"name": "كتابة", "reward": (30, 60)},
-                {"name": "تدريس", "reward": (45, 90)},
-            ]
-            
-            job = random.choice(jobs)
-            reward = random.randint(job["reward"][0], job["reward"][1])
-            
-            economy = self.get_economy()
-            economy[str(interaction.user.id)]["wallet"] += reward
-            self.save_economy(economy)
-            
-            embed = self.embed_manager.success(
-                "💼 عملت بنجاح",
-                f"عملت في **{job['name']}** وحصلت على **💎 {reward}**"
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=False)
-        except Exception as e:
-            embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-    
-    @app_commands.command(name="deposit", description="إيداع أموال في البنك")
-    async def deposit(self, interaction: discord.Interaction, amount: int):
-        """إيداع"""
-        try:
-            balance_data = self.get_user_balance(interaction.user.id)
-            
-            if amount > balance_data["wallet"]:
-                embed = self.embed_manager.error(
-                    "❌ أموال غير كافية",
-                    f"رصيدك في المحفظة: **💎 {balance_data['wallet']}**"
-                )
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-                return
-            
-            economy = self.get_economy()
-            economy[str(interaction.user.id)]["wallet"] -= amount
-            economy[str(interaction.user.id)]["bank"] += amount
-            self.save_economy(economy)
-            
-            embed = self.embed_manager.success(
-                "✅ تم الإيداع",
-                f"تم إيداع **💎 {amount}** في البنك"
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=False)
-        except Exception as e:
-            embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-    
-    @app_commands.command(name="withdraw", description="سحب أموال من البنك")
-    async def withdraw(self, interaction: discord.Interaction, amount: int):
-        """سحب"""
-        try:
-            balance_data = self.get_user_balance(interaction.user.id)
-            
-            if amount > balance_data["bank"]:
-                embed = self.embed_manager.error(
-                    "❌ أموال غير كافية",
-                    f"رصيدك في البنك: **💎 {balance_data['bank']}**"
-                )
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-                return
-            
-            economy = self.get_economy()
-            economy[str(interaction.user.id)]["wallet"] += amount
-            economy[str(interaction.user.id)]["bank"] -= amount
-            self.save_economy(economy)
-            
-            embed = self.embed_manager.success(
-                "✅ تم السحب",
-                f"تم سحب **💎 {amount}** من البنك"
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=False)
-        except Exception as e:
-            embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-    
-    @app_commands.command(name="transfer", description="تحويل أموال لشخص")
+    @app_commands.command(name="transfer", description="تحويل كريديت لشخص آخر")
+    @app_commands.describe(
+        user="المستخدم الذي تريد تحويل له",
+        amount="عدد الكريديت"
+    )
     async def transfer(self, interaction: discord.Interaction, user: discord.Member, amount: int):
-        """تحويل"""
+        """تحويل الكريديت بين المستخدمين"""
         try:
-            if user == interaction.user:
+            if amount <= 0:
+                embed = self.embed_manager.error("❌ خطأ", "يجب أن يكون المبلغ أكبر من 0")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+            
+            if user.id == interaction.user.id:
+                embed = self.embed_manager.error("❌ خطأ", "لا يمكنك تحويل كريديت لنفسك")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+            
+            sender_credits = self.get_user_credits(interaction.user.id)
+            if sender_credits < amount:
                 embed = self.embed_manager.error(
-                    "❌ خطأ",
-                    "لا يمكنك تحويل أموال لنفسك"
+                    "❌ كريديت غير كافي",
+                    f"رصيدك: `{sender_credits:,}` 💳\nالمبلغ المطلوب: `{amount:,}` 💳"
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
             
-            balance_data = self.get_user_balance(interaction.user.id)
-            
-            if amount > balance_data["wallet"]:
-                embed = self.embed_manager.error(
-                    "❌ أموال غير كافية",
-                    f"رصيدك: **💎 {balance_data['wallet']}**"
-                )
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-                return
-            
-            economy = self.get_economy()
-            economy[str(interaction.user.id)]["wallet"] -= amount
-            self.get_user_balance(user.id)
-            economy[str(user.id)]["wallet"] += amount
-            self.save_economy(economy)
+            # تنفيذ التحويل
+            self.add_user_credits(interaction.user.id, -amount)
+            self.add_user_credits(user.id, amount)
             
             embed = self.embed_manager.success(
-                "✅ تم التحويل",
-                f"تم تحويل **💎 {amount}** إلى {user.mention}"
+                "✅ تم التحويل بنجاح",
+                f"**من**: {interaction.user.mention}\n"
+                f"**إلى**: {user.mention}\n"
+                f"**المبلغ**: `{amount:,}` 💳\n\n"
+                f"رصيدك الجديد: `{self.get_user_credits(interaction.user.id):,}` 💳"
             )
-            await interaction.response.send_message(embed=embed, ephemeral=False)
+            
+            await interaction.response.send_message(embed=embed)
         except Exception as e:
             embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
             await interaction.response.send_message(embed=embed, ephemeral=True)
     
-    @app_commands.command(name="rich", description="أغنى 10 أشخاص")
-    async def rich_leaderboard(self, interaction: discord.Interaction):
-        """لوحة الأغنياء"""
+    @app_commands.command(name="credits-info", description="معلومات نظام الكريديت")
+    async def credits_info(self, interaction: discord.Interaction):
+        """عرض معلومات الكريديت"""
         try:
-            economy = self.get_economy()
-            
-            sorted_users = sorted(
-                economy.items(),
-                key=lambda x: x[1]["wallet"] + x[1]["bank"],
-                reverse=True
-            )[:10]
-            
             embed = self.embed_manager.info(
-                "💎 أغنى 10 أشخاص",
-                "أعلى الأرصدة في السيرفر"
+                "💎 نظام الكريديت العالمي",
+                "كريديت Discord العالمي - استخدمه في الفعاليات والهدايا!"
+            )
+            embed.add_field(
+                name="📊 ماذا تفعل بالكريديت؟",
+                value="""
+                🎁 **الهدايا** - شارك في هدايا الكريديت واربح المزيد
+                🎉 **الفعاليات** - شارك في الفعاليات الخاصة
+                💸 **التحويل** - حول كريديتك لأصدقائك
+                """,
+                inline=False
+            )
+            embed.add_field(
+                name="⚡ الأوامر المتاحة",
+                value="""
+                `/balance` - عرض رصيدك
+                `/transfer @user [amount]` - تحويل كريديت
+                """,
+                inline=False
             )
             
-            rich_text = "\n".join([
-                f"{i+1}. <@{uid}> - 💎 {data['wallet'] + data['bank']}"
-                for i, (uid, data) in enumerate(sorted_users)
-            ])
+            await interaction.response.send_message(embed=embed)
+        except Exception as e:
+            embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+    
+    # ═══════════════════════════════════════════════════════════
+    # 🔐 أوامر المالك فقط
+    # ═══════════════════════════════════════════════════════════
+    
+    @app_commands.command(name="admin-credits", description="[المالك] إدارة الكريديت")
+    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.describe(
+        user="المستخدم",
+        action="إضافة (+) أم حذف (-)",
+        amount="عدد الكريديت"
+    )
+    async def admin_credits(self, interaction: discord.Interaction, user: discord.Member, action: str, amount: int):
+        """إدارة الكريديت من قبل المالك"""
+        try:
+            # التحقق من صلاحيات المالك
+            if interaction.user.id != self.bot.owner_id:
+                embed = self.embed_manager.error(
+                    "❌ رفض الوصول",
+                    "فقط مالك البوت يمكنه استخدام هذا الأمر"
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
             
-            embed.add_field(name="الترتيب", value=rich_text or "لا توجد بيانات", inline=False)
+            if amount <= 0:
+                embed = self.embed_manager.error("❌ خطأ", "المبلغ يجب أن يكون أكبر من 0")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
             
-            await interaction.response.send_message(embed=embed, ephemeral=False)
+            if action not in ["+", "-", "add", "remove"]:
+                embed = self.embed_manager.error("❌ خطأ", "استخدم `+` أو `-` أو `add` أو `remove`")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+            
+            is_add = action in ["+", "add"]
+            change = amount if is_add else -amount
+            
+            new_balance = self.add_user_credits(user.id, change)
+            action_text = "إضافة" if is_add else "حذف"
+            
+            embed = self.embed_manager.success(
+                f"✅ تم {action_text} الكريديت",
+                f"**المستخدم**: {user.mention}\n"
+                f"**العملية**: {action_text} `{amount:,}` 💳\n"
+                f"**الرصيد الجديد**: `{new_balance:,}` 💳"
+            )
+            
+            await interaction.response.send_message(embed=embed)
+        except Exception as e:
+            embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+    
+    @app_commands.command(name="bot-credits", description="[المالك] عرض كريديت البوت")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def bot_credits(self, interaction: discord.Interaction):
+        """عرض كريديت البوت"""
+        try:
+            bot_credits = self.get_user_credits(self.bot.user.id)
+            
+            embed = self.embed_manager.info(
+                "💎 كريديت البوت",
+                f"**الرصيد الإجمالي**: `{bot_credits:,}` 💳\n\n"
+                f"هذا الكريديت يُستخدم في:\n"
+                f"🎁 الهدايا والفعاليات\n"
+                f"🎉 المكافئات الخاصة"
+            )
+            
+            await interaction.response.send_message(embed=embed)
         except Exception as e:
             embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
             await interaction.response.send_message(embed=embed, ephemeral=True)

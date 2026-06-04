@@ -120,22 +120,14 @@ class HelpView(discord.ui.View):
         )
     
     def _get_economy_help(self):
-        """أوامر الاقتصاد"""
+        """أوامر الاقتصاد - نظام الكريديت"""
         return self.embed_manager.info(
-            "💰 نظام الاقتصاد",
-            "المحفظة والعملات والمتجر",
+            "💎 نظام الكريديت العالمي",
+            "نظام الكريديت المتكامل مثل ProBot",
             **{
-                "/balance [@user]": "عرض الرصيد",
-                "/daily": "مكافأة يومية",
-                "/weekly": "مكافأة أسبوعية",
-                "/work": "العمل للحصول على عملة",
-                "/deposit [amount]": "إيداع في البنك",
-                "/withdraw [amount]": "سحب من البنك",
-                "/transfer @user [amount]": "تحويل أموال",
-                "/shop": "عرض المتجر",
-                "/buy [item]": "شراء عنصر",
-                "/inventory": "عرض المقتنيات",
-                "/rich": "أغنى 10 أعضاء",
+                "/balance [@user]": "عرض رصيد الكريديت",
+                "/transfer @user [amount]": "تحويل كريديت",
+                "/credits-info": "معلومات الكريديت",
             }
         )
     
@@ -212,20 +204,12 @@ class HelpView(discord.ui.View):
         )
     
     def _get_fun_help(self):
-        """أوامر الترفيه"""
+        """أوامر الترفيه - تم حذفها"""
         return self.embed_manager.info(
-            "🎮 نظام الترفيه",
-            "ألعاب وتصويتات وأشياء مضحكة",
+            "🎮 الترفيه - تم التطوير",
+            "تم حذف أوامر الترفيه لتركيز أفضل على أنظمة السيرفر",
             **{
-                "/8ball [question]": "كرة السحر",
-                "/roll [max]": "رمي نرد",
-                "/coinflip": "قلب عملة",
-                "/rps [choice]": "حجر ورقة مقص",
-                "/joke": "نكتة عشوائية",
-                "/meme": "ميم عشوائي",
-                "/say [message]": "البوت يقول رسالة",
-                "/poll [question] [option1] [option2]": "تصويت",
-                "/afk [reason]": "وضع AFK",
+                "الهدايا والجوائز": "موجودة في نظام Giveaway",
             }
         )
     
@@ -241,6 +225,7 @@ class HelpView(discord.ui.View):
                 "/log-set [#channel] [type]": "تعيين قناة لوق",
                 "/set-welcome [#channel]": "تعيين قناة الترحيب",
                 "/set-goodbye [#channel]": "تعيين قناة الوداع",
+                "/balance [@user]": "عرض الكريديت",
             }
         )
 
