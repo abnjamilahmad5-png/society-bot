@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from main import EmbedManager, DataManager
-from datetime import datetime
+from datetime import datetime, timezone
 
 class Welcome(commands.Cog):
     """نظام الترحيب والوداع"""
@@ -91,11 +91,11 @@ class Welcome(commands.Cog):
                         f"👋 مرحباً {member.name}",
                         f"**المستخدم**: {member.mention}\n"
                         f"**عدد الأعضاء**: {member.guild.member_count}\n"
-                        f"**عمر الحساب**: {(datetime.now() - member.created_at).days} يوم\n"
-                        f"**وقت الانضمام**: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"
+                        f"**عمر الحساب**: {(datetime.now(timezone.utc) - member.created_at).days} يوم\n"
+                        f"**وقت الانضمام**: {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M:%S')}"
                     )
                     embed.set_thumbnail(url=member.avatar.url if member.avatar else "")
-                    embed.set_footer(text=f"𝑆𝑜𝑐𝑖𝑒𝑡𝑦 ✦ {datetime.now().strftime('%d/%m/%Y • %H:%M:%S')}")
+                    embed.set_footer(text=f"𝑆𝑜𝑐𝑖𝑒𝑡𝑦 ✦ {datetime.now(timezone.utc).strftime('%d/%m/%Y • %H:%M:%S')}")
                     
                     try:
                         await channel.send(embed=embed)
@@ -109,11 +109,11 @@ class Welcome(commands.Cog):
                             f"👋 مرحباً {member.name}",
                             f"**المستخدم**: {member.mention}\n"
                             f"**عدد الأعضاء**: {member.guild.member_count}\n"
-                            f"**عمر الحساب**: {(datetime.now() - member.created_at).days} يوم\n"
-                            f"**وقت الانضمام**: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"
+                            f"**عمر الحساب**: {(datetime.now(timezone.utc) - member.created_at).days} يوم\n"
+                            f"**وقت الانضمام**: {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M:%S')}"
                         )
                         embed.set_thumbnail(url=member.avatar.url if member.avatar else "")
-                        embed.set_footer(text=f"𝑆𝑜𝑐𝑖𝑒𝑡𝑦 ✦ {datetime.now().strftime('%d/%m/%Y • %H:%M:%S')}")
+                        embed.set_footer(text=f"𝑆𝑜𝑐𝑖𝑒𝑡𝑦 ✦ {datetime.now(timezone.utc).strftime('%d/%m/%Y • %H:%M:%S')}")
                         
                         try:
                             await channel.send(embed=embed)
@@ -138,7 +138,7 @@ class Welcome(commands.Cog):
                     f"اقرأ القوانين وتمتع بالتواصل مع الأعضاء الآخرين.\n\n"
                     f"📊 معلومات حسابك:\n"
                     f"**اسم المستخدم**: {member.name}\n"
-                    f"**وقت الانضمام**: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"
+                    f"**وقت الانضمام**: {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M:%S')}"
                 )
                 await member.send(embed=dm_embed)
             except Exception as e:
@@ -162,7 +162,7 @@ class Welcome(commands.Cog):
                         f"👋 وداعاً {member.name}",
                         f"**المستخدم**: {member.mention}\n"
                         f"**الرتب**: {len(member.roles)}\n"
-                        f"**مدة البقاء**: {(datetime.now() - member.joined_at).days} يوم"
+                        f"**مدة البقاء**: {(datetime.now(timezone.utc) - member.joined_at).days} يوم"
                     )
                     embed.set_thumbnail(url=member.avatar.url if member.avatar else "")
                     
