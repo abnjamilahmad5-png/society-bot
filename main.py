@@ -192,6 +192,8 @@ class Society(commands.Bot):
         logger.info(f"{'='*50}\n")
 
         try:
+            # إزالة أي أوامر مكررة قديمة
+            self.tree.clear_commands(guild=None)
             synced = await self.tree.sync()
             logger.info(f"✅ تم مزامنة {len(synced)} أمر Slash (Global)")
         except Exception as e:
