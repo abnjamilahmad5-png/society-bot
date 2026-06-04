@@ -5,6 +5,11 @@ import os
 import sys
 from datetime import datetime
 import asyncio
+from dotenv import load_dotenv
+from config.logger import logger
+
+# تحميل متغيرات البيئة من .env
+load_dotenv()
 
 # ══════════════════════════════════════════
 #   𝑆𝑜𝑐𝑖𝑒𝑡𝑦 — البوت الأسطوري الشامل
@@ -128,10 +133,11 @@ class Society(commands.Bot):
         self.data_manager = DataManager()
         self.embed_manager = EmbedManager()
         self.color_manager = ColorManager()
+        self.logger = logger
         self.start_time = None
 
     def load_config(self):
-        """الأولوية: متغيرات البيئة → ثم config.json"""
+        """الأولوية: متغيرات البيئة (.env) → ثم config.json"""
         config = {}
 
         # 1. اقرأ من config.json
@@ -139,18 +145,19 @@ class Society(commands.Bot):
             if os.path.exists("config.json"):
                 with open("config.json", "r", encoding="utf-8") as f:
                     config.update(json.load(f))
+                logger.info("✅ تم تحميل config.json")
         except Exception as e:
-            print(f"⚠️ تحذير قراءة config.json: {e}")
+            logger.warning(f"⚠️ تحذير قراءة config.json: {e}")
 
-        # 2. متغيرات البيئة تتجاوز كل شيء (Railway)
-        env_token = os.environ.get("TOKEN") or os.environ.get("BOT_TOKEN")
-        if env_token:
+        # 2. متغيرات البيئة تتجاوز كل شيء (.env و Railway)
+        env_token = os.getenv("TOKEN") or os.getenv("BOT_TOKEN")
+        if env_token and env_token != "YOUR_BOT_TOKEN_HERE":
             config['TOKEN'] = env_token
-            print("✅ تم تحميل التوكن من متغيرات البيئة")
+            logger.info("✅ تم تحميل التوكن من ملف .env أو متغيرات البيئة")
         else:
-            print("⚠️ لم يتم العثور على TOKEN في البيئة - سيُستخدم من config.json")
+            logger.warning("⚠️ التوكن لم يتم تحميله من .env - يُرجى تحديثه في .env")
 
-        config['PREFIX'] = os.environ.get('PREFIX', config.get('PREFIX', '!'))
+        config['PREFIX'] = os.getenv('PREFIX', config.get('PREFIX', '!'))
 
         return config
 
@@ -165,30 +172,30 @@ class Society(commands.Bot):
             if filename.endswith(".py") and filename != "__init__.py":
                 try:
                     await self.load_extension(f"cogs.{filename[:-3]}")
-                    print(f"  ✅ {filename}")
+                    logger.info(f"  ✅ {filename}")
                     loaded += 1
                 except Exception as e:
-                    print(f"  ❌ {filename}: {e}")
+                    logger.error(f"  ❌ {filename}: {e}")
                     failed += 1
-        print(f"\n📦 الكوجز: {loaded} محملة، {failed} فشلت\n")
+        logger.info(f"\n📦 الكوجز: {loaded} محملة، {failed} فشلت\n")
 
     async def setup_hook(self):
         await self.load_cogs()
 
     async def on_ready(self):
         self.start_time = datetime.now()
-        print(f"\n{'='*50}")
-        print(f"✅ 𝑆𝑜𝑐𝑖𝑒𝑡𝑦 Bot Online!")
-        print(f"✅ الاسم: {self.user.name}")
-        print(f"✅ ID: {self.user.id}")
-        print(f"✅ السيرفرات: {len(self.guilds)}")
-        print(f"{'='*50}\n")
+        logger.info(f"\n{'='*50}")
+        logger.info(f"✅ 𝑆𝑜𝑐𝑖𝑒𝑡𝑦 Bot Online!")
+        logger.info(f"✅ الاسم: {self.user.name}")
+        logger.info(f"✅ ID: {self.user.id}")
+        logger.info(f"✅ السيرفرات: {len(self.guilds)}")
+        logger.info(f"{'='*50}\n")
 
         try:
             synced = await self.tree.sync()
-            print(f"✅ تم مزامنة {len(synced)} أمر Slash (Global)")
+            logger.info(f"✅ تم مزامنة {len(synced)} أمر Slash (Global)")
         except Exception as e:
-            print(f"⚠️ مزامنة الأوامر: {e}")
+            logger.warning(f"⚠️ مزامنة الأوامر: {e}")
 
 
 async def main():
@@ -197,27 +204,29 @@ async def main():
     token = bot.config.get("TOKEN")
 
     # التحقق من التوكن
-    if not token or token in ["أضف توكن البوت هنا", "YOUR_BOT_TOKEN", ""]:
-        print("❌ خطأ: التوكن غير موجود أو غير صحيح!")
-        print("🔧 الحلول:")
-        print("   • في Railway: Variables → New Variable → KEY: TOKEN → VALUE: توكنك")
-        print("   • محلياً: export TOKEN='توكنك'")
+    if not token or token in ["أضف توكن البوت هنا", "YOUR_BOT_TOKEN", "YOUR_BOT_TOKEN_HERE", ""]:
+        logger.critical("❌ خطأ: التوكن غير موجود أو غير صحيح!")
+        logger.critical("🔧 الحلول:")
+        logger.critical("   • حدّث ملف .env مع التوكن الصحيح")
+        logger.critical("   • في Railway: Variables → New Variable → KEY: TOKEN → VALUE: توكنك")
         sys.exit(1)
 
     if len(token) < 50:
-        print(f"❌ التوكن قصير جداً ({len(token)} حرف)! يجب ~70 حرف")
+        logger.critical(f"❌ التوكن قصير جداً ({len(token)} حرف)! يجب ~70 حرف")
         sys.exit(1)
 
-    print(f"🔑 التوكن: {token[:20]}... ({len(token)} حرف)")
+    # إخفاء التوكن - طباعة آمنة فقط
+    masked_token = f"{token[:10]}...{token[-5:]}" if len(token) > 15 else "***"
+    logger.info(f"🔑 التوكن محمّل بنجاح (الطول: {len(token)} حرف)")
 
     try:
         await bot.start(token)
     except discord.LoginFailure as e:
-        print(f"❌ فشل تسجيل الدخول: {e}")
-        print("🔧 التوكن غلط! جيب توكن جديد من Discord Developer Portal")
+        logger.critical(f"❌ فشل تسجيل الدخول: {e}")
+        logger.critical("🔧 التوكن غلط! جيب توكن جديد من Discord Developer Portal")
         sys.exit(1)
     except Exception as e:
-        print(f"❌ خطأ غير متوقع: {e}")
+        logger.critical(f"❌ خطأ غير متوقع: {e}")
         sys.exit(1)
 
 
