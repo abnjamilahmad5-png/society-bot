@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from main import EmbedManager
-from typing import Optional, Literal
+from typing import Optional, Literal, Union
 
 class Echo(commands.Cog):
     """نظام تكرار الرسائل - البوت يردد كلامك"""
@@ -14,14 +14,14 @@ class Echo(commands.Cog):
     @app_commands.command(name="text", description="البوت يردد كلامك")
     @app_commands.describe(
         message="الرسالة اللي تبي تردد",
-        user="منشن شخص (اختياري)",
+        mention="منشن (مستخدم أو رتبة - اختياري)",
         style="أسلوب الرسالة (اختياري)"
     )
     async def text(
         self,
         interaction: discord.Interaction,
         message: str,
-        user: Optional[discord.Member] = None,
+        mention: Optional[Union[discord.Member, discord.Role]] = None,
         style: Optional[Literal["عادي 📝", "أحرف كبيرة 🔤", "أحرف صغيرة 🔡", "عكسي 🔄", "فراغات 🔲"]] = None
     ):
         """البوت يردد الرسالة بالأسلوب المطلوب"""
@@ -41,8 +41,8 @@ class Echo(commands.Cog):
             # بناء الرسالة النهائية
             final_message = formatted_message
             
-            if user:
-                final_message = f"{user.mention}\n{final_message}"
+            if mention:
+                final_message = f"{mention.mention}\n{final_message}"
             
             # إرسال الرسالة
             await interaction.response.send_message(final_message)
