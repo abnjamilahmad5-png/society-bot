@@ -187,9 +187,9 @@ class Economy(commands.Cog):
             embed = self.embed_manager.error("❌ خطأ", f"```{str(e)[:100]}```")
             await interaction.response.send_message(embed=embed, ephemeral=True)
     
-    @app_commands.command(name="bot-credits", description="[المالك] عرض كريديت البوت")
+    @app_commands.command(name="reserve-credits", description="[المالك] عرض كريديت البوت")
     @app_commands.checks.has_permissions(administrator=True)
-    async def bot_credits(self, interaction: discord.Interaction):
+    async def reserve_credits(self, interaction: discord.Interaction):
         """عرض كريديت البوت"""
         try:
             bot_credits = self.get_user_credits(self.bot.user.id)
